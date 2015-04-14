@@ -19,8 +19,8 @@ func main() {
 	//TOODO: add finalizer
 	defer context.Free()
 
-	camera, _ := GetNewGPhotoCamera()
-	if err = camera.Init(context); err != nil {
+	camera, err := GetNewGPhotoCamera(context)
+	if err != nil {
 		fmt.Printf("Error initializing camera : %v", err.Error())
 		return
 	}
@@ -30,5 +30,5 @@ func main() {
 }
 
 func init() {
-	C.gp_log_add_func(GP_LOG_DEBUG, (*[0]byte)(C.loger_func), nil)
+	C.gp_log_add_func(LogDebug, (*[0]byte)(C.loger_func), nil)
 }

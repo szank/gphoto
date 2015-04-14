@@ -25,33 +25,30 @@ type CameraWidget struct {
 	Children []CameraWidget
 }
 
-func GetNewGPhotoCamera() (*Camera, error) {
+func GetNewGPhotoCamera(context *Context) (*Camera, error) {
 	var gpCamera *C.Camera
 	C.gp_camera_new((**C.Camera)(unsafe.Pointer(&gpCamera)))
 
 	if gpCamera == nil {
 		return nil, fmt.Errorf("Cannot initialize camera pointer")
 	}
-	return &Camera{
-		gpCamera: gpCamera,
-	}, nil
 
-}
-
-func (camera *Camera) Init(context *Context) error {
-	camera.gpContext = context.gpContext
-
-	retval := C.gp_camera_init(camera.gpCamera, camera.gpContext)
-	if retval != GP_OK {
-		return fmt.Errorf("Error number : %d", retval)
+	initCode := C.gp_camera_init(gpCamera, context.gpContext)
+	if initCode != gpOk {
+		C.gp_camera_exit(gpCamera, context.gpContext)
+		C.gp_camera_unref(gpCamera)
+		return nil, fmt.Errorf("Error number : %d", initCode)
 	}
-	return nil
+	return &Camera{
+		gpCamera:  gpCamera,
+		gpContext: context.gpContext,
+	}, nil
 }
 
 func (camera *Camera) GetWidgetTree() error {
 	var rootWidget *C.CameraWidget
 
-	if retval := C.gp_camera_get_config(camera.gpCamera, (**C.CameraWidget)(unsafe.Pointer(&rootWidget)), camera.gpContext); retval != GP_OK {
+	if retval := C.gp_camera_get_config(camera.gpCamera, (**C.CameraWidget)(unsafe.Pointer(&rootWidget)), camera.gpContext); retval != gpOk {
 		return fmt.Errorf("cannot initialize camera settings tree error code :%v", retval)
 	}
 	defer C.gp_widget_free(rootWidget)

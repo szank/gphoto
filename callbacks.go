@@ -3,12 +3,22 @@ package main
 import "C"
 import "fmt"
 
-//Callbacks part :
+//ContextLogCallback defineds a function used to log info associated to lobgphoto2 context
 type ContextLogCallback func(string)
+
+//LogCallback defines a generic libgphoto2 logging function
 type LogCallback func(int, string, string)
 
+// ContextInfoCallback is the function logging info logs from  libgphoto2 context.
+//By default it logs everything to standard outout. You can assign your own method to this var
 var ContextInfoCallback ContextLogCallback
+
+// ContextErrorCallback is the function logging error logs from  libgphoto2 context.
+//By default it logs everything to standard outout. You can assign your own method to this var
 var ContextErrorCallback ContextLogCallback
+
+// LoggerCallback is the libgphoto2 logging function. Currently there is no possibility to add multiple log function like it is possible in
+// native C library implementation. Default implementation log everything to standard output with log level set to DEBUG
 var LoggerCallback LogCallback
 
 func defaultLoggerCallback(debugLevel int, domain, data string) {
@@ -44,10 +54,9 @@ func wrapperLoggingCallback(logLevel int, domain, data *C.char) {
 	}
 }
 
-func addLoggingFunc(LogCallback value) int
-
 func init() {
 	ContextInfoCallback = defaultInfoCallback
 	ContextErrorCallback = defaultErrorCallback
 	LoggerCallback = defaultLoggerCallback
+	C.gp_log_add_func(LogDebug, (*[0]byte)(C.loger_func), nil)
 }
