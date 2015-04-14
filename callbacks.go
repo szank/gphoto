@@ -54,6 +54,7 @@ func wrapperLoggingCallback(logLevel int, domain, data *C.char) {
 	}
 }
 
+// make the general logging better. Make min log level settable somehow
 func init() {
 	ContextInfoCallback = defaultInfoCallback
 	ContextErrorCallback = defaultErrorCallback

@@ -28,7 +28,3 @@ func main() {
 	camera.GetWidgetTree()
 	camera.PrintWidgetTree(os.Stdout)
 }
-
-func init() {
-	C.gp_log_add_func(LogDebug, (*[0]byte)(C.loger_func), nil)
-}
