@@ -7,14 +7,17 @@ package main
 import "C"
 import "fmt"
 
+//Context represents a  context in which all other calls are executed
 type Context struct {
 	gpContext *C.GPContext
 }
 
+//Free should be called afer you don't need the context anymore
 func (c Context) Free() {
 	C.gp_context_unref(c.gpContext)
 }
 
+//GetNewGPhotoContext returns a new gphoto context
 func GetNewGPhotoContext() (*Context, error) {
 	var gpContext *C.GPContext
 	fmt.Printf("Gpcontext before call %#v\n", gpContext)

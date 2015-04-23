@@ -63,5 +63,5 @@ func init() {
 	ContextInfoCallback = defaultInfoCallback
 	ContextErrorCallback = defaultErrorCallback
 	LoggerCallback = defaultLoggerCallback
-	C.gp_log_add_func(LogDebug, (*[0]byte)(C.loger_func), nil)
+	C.gp_log_add_func(LogError, (*[0]byte)(C.loger_func), nil)
 }

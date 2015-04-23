@@ -81,3 +81,19 @@ const (
 	//LogData : Log message is a data hex dump
 	LogData
 )
+
+//File types
+const (
+	//FileTypePreview is a preview of an image
+	FileTypePreview = iota
+	//FileTypeNormal is regular normal data of a file
+	FileTypeNormal
+	//FileTypeRaw usually the same as FileTypeNormal for modern cameras ( left for compatibility purposes)
+	FileTypeRaw
+	//FileTypeAudio is a audio view of a file. Perhaps an embedded comment or similar
+	FileTypeAudio
+	//FileTypeExif is the  embedded EXIF data of an image
+	FileTypeExif
+	//FileTypeMetadata is the metadata of a file, like Metadata of files on MTP devices
+	FileTypeMetadata
+)
