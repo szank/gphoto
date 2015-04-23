@@ -1,0 +1,2 @@
+//Stub documentation
+package gphoto
