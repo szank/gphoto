@@ -1,4 +1,4 @@
-package main
+package gphoto
 
 // gphoto2 errors
 const (
