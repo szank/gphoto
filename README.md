@@ -1,8 +1,9 @@
 # gphoto
-Package gphoto is a go wrapper for libgphoto2 library (http://www.gphoto.org/proj/libgphoto2/).
-Gphoto let you control your digital camera or webcam from your PC.
+Package gphoto let you control your digital camera or webcam from your PC.
 
-It supports most of modern cameras supporting PTP protocol and connecting to PC with an USB cable
+Gphoto is a go wrapper for libgphoto2 library (http://www.gphoto.org/proj/libgphoto2/).
+
+It supports most of modern cameras supporting PTP protocol and connecting to PC with an USB cable.
 Gphoto lets you inspect and modify camera settings ( shutter speed, aperture, iso, image quality etc.),
 capture photos and download them to the PC.
 
