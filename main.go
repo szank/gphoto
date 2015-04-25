@@ -1,6 +1,6 @@
 package gphoto
 
-// #cgo LDFLAGS: -L. -lgphotocallbacks -L/usr/lib/x86_64-linux-gnu -lgphoto2 -lgphoto2_port
+// #cgo LDFLAGS:  -L/usr/lib/x86_64-linux-gnu -lgphoto2 -lgphoto2_port
 // #cgo CFLAGS: -I/usr/include
 // #include <gphoto2/gphoto2.h>
 // #include "callbacks.h"
