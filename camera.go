@@ -7,10 +7,8 @@ package gphoto
 // #include <stdlib.h>
 import "C"
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"reflect"
 	"unsafe"
 )
 
@@ -28,24 +26,6 @@ type CameraWidget struct {
 	Info     string
 	Type     int
 	Children []CameraWidget
-}
-
-type cameraFilePathInternal struct {
-	Name   [128]uint8
-	Folder [1024]uint8
-}
-
-//CameraFilePath is a path to a file on the camera file system
-type CameraFilePath struct {
-	Name   string
-	Folder string
-}
-
-func newCameraFilePathFromInternalImpl(input *cameraFilePathInternal) *CameraFilePath {
-	return &CameraFilePath{
-		Name:   string(input.Name[:bytes.IndexByte(input.Name[:], 0)]),
-		Folder: string(input.Folder[:bytes.IndexByte(input.Folder[:], 0)]),
-	}
 }
 
 //GetNewGPhotoCamera returns a new camera instance
@@ -116,52 +96,4 @@ func (camera *Camera) PrintWidgetTree(file io.Writer) {
 		fmt.Printf("    Widget Info[%v], Label[%v] , Name[%v], type [%v]\n", child.Info, child.Label, child.Name, child.Type)
 	}
 
-}
-
-//CaptureImage captures image with current setings into camera's internal storage
-func (camera *Camera) CaptureImage() (*CameraFilePath, error) {
-	photoPath := cameraFilePathInternal{}
-
-	if retval := C.gp_camera_capture(camera.gpCamera, 0, (*C.CameraFilePath)(unsafe.Pointer(&photoPath)), camera.gpContext); retval != gpOk {
-		return nil, fmt.Errorf("Cannot capture photo, error code :%v", retval)
-	}
-	return newCameraFilePathFromInternalImpl(&photoPath), nil
-}
-
-//DownloadImage saves image pointed by path to the provided buffer. If leave on camera is set to false,the file will be deleted from the camera internal storage
-func (camera *Camera) DownloadImage(path *CameraFilePath, buffer io.Writer, leaveOnCamera bool) error {
-	var gpFile *C.CameraFile
-	C.gp_file_new((**C.CameraFile)(unsafe.Pointer(&gpFile)))
-
-	if gpFile == nil {
-		return fmt.Errorf("Cannot initialize camera file")
-	}
-	defer C.gp_file_free(gpFile)
-
-	fileDir := C.CString(path.Folder)
-	defer C.free(unsafe.Pointer(fileDir))
-
-	fileName := C.CString(path.Name)
-	defer C.free(unsafe.Pointer(fileName))
-
-	if retval := C.gp_camera_file_get(camera.gpCamera, fileDir, fileName, FileTypeNormal, gpFile, camera.gpContext); retval != gpOk {
-		return fmt.Errorf("Cannot download photo file, error code :%v", retval)
-	}
-
-	var fileData *C.char
-	var fileLen C.ulong
-	C.gp_file_get_data_and_size(gpFile, (**C.char)(unsafe.Pointer(&fileData)), &fileLen)
-
-	hdr := reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(fileData)),
-		Len:  int(fileLen),
-		Cap:  int(fileLen),
-	}
-	goSlice := *(*[]byte)(unsafe.Pointer(&hdr))
-
-	_, err := buffer.Write(goSlice)
-	if err != nil && leaveOnCamera == false {
-		C.gp_camera_file_delete(camera.gpCamera, fileDir, fileName, camera.gpContext)
-	}
-	return err
 }

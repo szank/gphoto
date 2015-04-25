@@ -43,8 +43,8 @@ func main() {
 		fmt.Printf("Could not create file %s, error : %s\n", "./"+path.Name, err.Error())
 	}
 
-	if err = camera.DownloadImage(path, file, true); err != nil {
-		fmt.Printf("Could not download file %s, error : %s\n", "./"+path.Name, err.Error())
-	}
+	///	if err = camera.DownloadImage(path, file, true); err != nil {
+	//		fmt.Printf("Could not download file %s, error : %s\n", "./"+path.Name, err.Error())
+	//	}
 
 }
