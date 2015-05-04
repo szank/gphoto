@@ -7,11 +7,6 @@ package gphoto
 import "C"
 import "fmt"
 
-//Context represents a  context in which all other calls are executed
-type Context struct {
-	gpContext *C.GPContext
-}
-
 //Free should be called afer you don't need the context anymore
 func (c Context) Free() {
 	C.gp_context_unref(c.gpContext)

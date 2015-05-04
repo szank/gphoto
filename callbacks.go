@@ -5,7 +5,6 @@ package gphoto
 // #include <gphoto2/gphoto2.h>
 // #include "callbacks.h"
 import "C"
-import "fmt"
 
 //ContextLogCallback defineds a function used to log info associated to lobgphoto2 context
 type ContextLogCallback func(string)
@@ -26,15 +25,15 @@ var ContextErrorCallback ContextLogCallback
 var LoggerCallback LogCallback
 
 func defaultLoggerCallback(debugLevel int, domain, data string) {
-	fmt.Println("LOGGING : domain " + domain + " data: " + data)
+	//fmt.Println("LOGGING : domain " + domain + " data: " + data)
 }
 
 func defaultInfoCallback(data string) {
-	fmt.Println("INFO: " + data)
+	//	fmt.Println("INFO: " + data)
 }
 
 func defaultErrorCallback(data string) {
-	fmt.Println("ERROR : " + data)
+	//	fmt.Println("ERROR : " + data)
 }
 
 //export wrapperInfoCallback
@@ -63,5 +62,5 @@ func init() {
 	ContextInfoCallback = defaultInfoCallback
 	ContextErrorCallback = defaultErrorCallback
 	LoggerCallback = defaultLoggerCallback
-	C.gp_log_add_func(LogError, (*[0]byte)(C.loger_func), nil)
+	C.gp_log_add_func(LogDebug, (*[0]byte)(C.loger_func), nil)
 }

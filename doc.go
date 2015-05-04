@@ -1,4 +1,4 @@
-//Package Gphoto let you control your digital camera or webcam from your PC.
+//Package gphoto let you control your digital camera or webcam from your PC.
 //
 //Package gphoto is a go wrapper for libgphoto2 library (http://www.gphoto.org/proj/libgphoto2/)
 //It is supporting most of modern cameras supporting PTP protocol and connecting to PC with an USB cable

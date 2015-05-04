@@ -12,22 +12,6 @@ import (
 	"unsafe"
 )
 
-//Camera struct represents a camera connected to the computer
-type Camera struct {
-	gpCamera       *C.Camera
-	gpContext      *C.GPContext
-	CameraSettings CameraWidget
-}
-
-//CameraWidget is a representation of one of the cameras's setting or control knob
-type CameraWidget struct {
-	Label    string
-	Name     string
-	Info     string
-	Type     int
-	Children []CameraWidget
-}
-
 //GetNewGPhotoCamera returns a new camera instance
 func GetNewGPhotoCamera(context *Context) (*Camera, error) {
 	var gpCamera *C.Camera
