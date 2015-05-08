@@ -46,3 +46,37 @@ func getFileBytes(gpFileIn *C.CameraFile, bufferOut io.Writer) error {
 	_, err := bufferOut.Write(goSlice)
 	return err
 }
+
+func newGpFile() (*C.CameraFile, error) {
+	var gpFile *C.CameraFile
+	C.gp_file_new((**C.CameraFile)(unsafe.Pointer(&gpFile)))
+
+	if gpFile == nil {
+		return nil, fmt.Errorf("Cannot initialize camera file")
+	}
+	return gpFile, nil
+}
+
+func widgetType(gpWidgetType C.CameraWidgetType) WidgetType {
+	switch int(gpWidgetType) {
+	case gpWidgetButton:
+		return WidgetButton
+	case gpWidgetDate:
+		return WidgetDate
+	case gpWidgetMenu:
+		return WidgetMenu
+	case gpWidgetRadio:
+		return WidgetRadio
+	case gpWidgetRange:
+		return WidgetRange
+	case gpWidgetSection:
+		return WidgetSection
+	case gpWidgetText:
+		return WidgetText
+	case gpWidgetToggle:
+		return WidgetToggle
+	case gpWidgetWindow:
+		return WidgetWindow
+	}
+	panic("should not be here")
+}

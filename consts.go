@@ -50,24 +50,37 @@ const (
 
 //widget types
 const (
+	gpWidgetWindow = iota //(0)
+	gpWidgetSection
+	gpWidgetText
+	gpWidgetRange
+	gpWidgetToggle
+	gpWidgetRadio
+	gpWidgetMenu
+	gpWidgetButton
+	gpWidgetDate
+)
+
+//widget types
+const (
 	//WidgetWindow is the toplevel configuration widget. It should likely contain multiple #WidgetSection entries.
-	WidgetWindow = iota //(0)
+	WidgetWindow WidgetType = "window"
 	//WidgetSection : Section widget (think Tab)
-	WidgetSection
+	WidgetSection WidgetType = "section"
 	//WidgetText : Text widget (string)
-	WidgetText
+	WidgetText WidgetType = "text"
 	//WidgetRange : Slider widget (float)
-	WidgetRange
+	WidgetRange WidgetType = "range"
 	//WidgetToggle : Toggle widget (think check box) (int)
-	WidgetToggle
+	WidgetToggle WidgetType = "toggle"
 	//WidgetRadio : Radio button widget (string)
-	WidgetRadio
+	WidgetRadio WidgetType = "radio"
 	//WidgetMenu : Menu widget (same as RADIO) (string)
-	WidgetMenu
+	WidgetMenu WidgetType = "menu"
 	//WidgetButton : Button press widget ( CameraWidgetCallback )
-	WidgetButton
+	WidgetButton WidgetType = "button"
 	//WidgetDate : Date entering widget (int)
-	WidgetDate
+	WidgetDate WidgetType = "date"
 )
 
 //Log level

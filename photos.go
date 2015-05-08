@@ -19,11 +19,9 @@ type cameraFilePathInternal struct {
 
 //DownloadImage saves image pointed by path to the provided buffer. If leave on camera is set to false,the file will be deleted from the camera internal storage
 func (file *CameraFilePath) DownloadImage(buffer io.Writer, leaveOnCamera bool) error {
-	var gpFile *C.CameraFile
-	C.gp_file_new((**C.CameraFile)(unsafe.Pointer(&gpFile)))
-
-	if gpFile == nil {
-		return fmt.Errorf("Cannot initialize camera file")
+	gpFile, err := newGpFile()
+	if err != nil {
+		return err
 	}
 	defer C.gp_file_free(gpFile)
 
@@ -37,7 +35,7 @@ func (file *CameraFilePath) DownloadImage(buffer io.Writer, leaveOnCamera bool) 
 		return fmt.Errorf("Cannot download photo file, error code :%v", retval)
 	}
 
-	err := getFileBytes(gpFile, buffer)
+	err = getFileBytes(gpFile, buffer)
 	if err != nil && leaveOnCamera == false {
 		C.gp_camera_file_delete(file.camera.gpCamera, fileDir, fileName, file.camera.gpContext)
 	}
@@ -54,14 +52,12 @@ func (camera *Camera) CaptureImage() (*CameraFilePath, error) {
 	return newCameraFilePathFromInternalImpl(&photoPath, camera), nil
 }
 
+//CapturePreview  captures image preview and saves it in provided buffer
 func (camera *Camera) CapturePreview(buffer io.Writer) error {
-	var gpFile *C.CameraFile
-	C.gp_file_new((**C.CameraFile)(unsafe.Pointer(&gpFile)))
-
-	if gpFile == nil {
-		return fmt.Errorf("Cannot initialize camera file")
+	gpFile, err := newGpFile()
+	if err != nil {
+		return err
 	}
-	defer C.gp_file_free(gpFile)
 
 	if retval := C.gp_camera_capture_preview(camera.gpCamera, gpFile, camera.gpContext); retval != gpOk {
 		return fmt.Errorf("Cannot capture preview, error code : %d", retval)
@@ -77,15 +73,15 @@ func (camera *Camera) DeleteFile(path *CameraFilePath) error {
 
 	fileName := C.CString(path.Name)
 	defer C.free(unsafe.Pointer(fileName))
+
 	retval := C.gp_camera_file_delete(camera.gpCamera, fileDir, fileName, camera.gpContext)
-	if retval < 0 {
+	if retval != gpOk {
 		return fmt.Errorf("Cannot delete fine on camera, error code :%v", retval)
 	}
 	return nil
 }
 
 //ListFiles returns a lits of files and folders on the camera
-//Currently work in progress
 func (camera *Camera) ListFiles() ([]CameraStorageInfo, error) {
 	var gpCameraStorageInformation *C.CameraStorageInformation
 	var storageCount C.int
@@ -190,14 +186,14 @@ func (camera *Camera) findAllChildDirectories(basedirPath *string) ([]string, er
 }
 
 func (camera *Camera) findAllFilesInDir(basedirPath *string) ([]string, error) {
-	var gpFileList *C.CameraList
 	var err error
 	returnedSlice := []string{}
 
 	gpDirPath := C.CString(*basedirPath)
 	defer C.free(unsafe.Pointer(gpDirPath))
 
-	if gpFileList, err = newGphotoList(); err != nil {
+	gpFileList, err := newGphotoList()
+	if err != nil {
 		return nil, err
 	}
 	defer C.gp_list_free(gpFileList)

@@ -9,6 +9,7 @@ import "C"
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"unsafe"
 )
 
@@ -36,48 +37,137 @@ func GetNewGPhotoCamera(context *Context) (*Camera, error) {
 //GetWidgetTree returns a widget tree for selected camera
 func (camera *Camera) GetWidgetTree() error {
 	var rootWidget *C.CameraWidget
+	var err error
 
-	if retval := C.gp_camera_get_config(camera.gpCamera, (**C.CameraWidget)(unsafe.Pointer(&rootWidget)), camera.gpContext); retval != gpOk {
-		return fmt.Errorf("cannot initialize camera settings tree error code :%v", retval)
+	if rootWidget, err = camera.getRootWidget(); err != nil {
+		return err
 	}
-	defer C.gp_widget_free(rootWidget)
-	camera.getWidgetInfo(rootWidget, &camera.CameraSettings)
+	defer C.free(unsafe.Pointer(rootWidget))
+
+	camera.CameraSettings = camera.getWidgetInfo(rootWidget)
 	return nil
 }
 
-func (camera *Camera) getWidgetInfo(input *C.CameraWidget, output *CameraWidget) {
+func (camera *Camera) getWidgetInfo(input *C.CameraWidget) CameraWidget {
+	//	var child *C.CameraWidget
+	var gpInfo *C.char
+	var gpLabel *C.char
+	var gpName *C.char
+	var gpWidgetType C.CameraWidgetType
 	var child *C.CameraWidget
-	var data *C.char
-	var widgetType C.CameraWidgetType
+	var readonly C.int
 
 	//ignore return value (int) for now
-	C.gp_widget_get_info(input, (**C.char)(unsafe.Pointer(&data)))
-	output.Info = C.GoString(data)
+	C.gp_widget_get_info(input, (**C.char)(unsafe.Pointer(&gpInfo)))
+	C.gp_widget_get_label(input, (**C.char)(unsafe.Pointer(&gpLabel)))
+	C.gp_widget_get_name(input, (**C.char)(unsafe.Pointer(&gpName)))
+	C.gp_widget_get_type(input, (*C.CameraWidgetType)(unsafe.Pointer(&gpWidgetType)))
+	C.gp_widget_get_readonly(input, &readonly)
 
-	C.gp_widget_get_label(input, (**C.char)(unsafe.Pointer(&data)))
-	output.Label = C.GoString(data)
-
-	C.gp_widget_get_name(input, (**C.char)(unsafe.Pointer(&data)))
-	output.Label = C.GoString(data)
-
-	C.gp_widget_get_type(input, (*C.CameraWidgetType)(unsafe.Pointer(&widgetType)))
-	output.Type = int(widgetType)
+	baseWidget := cameraWidgetImpl{
+		widgetType: widgetType(gpWidgetType),
+		label:      C.GoString(gpLabel),
+		info:       C.GoString(gpInfo),
+		name:       C.GoString(gpName),
+		readonly:   (int(readonly) == 1),
+		camera:     camera,
+	}
 
 	childrenCount := int(C.gp_widget_count_children(input))
-	output.Children = make([]CameraWidget, childrenCount)
 	for n := 0; n < childrenCount; n++ {
 		C.gp_widget_get_child(input, C.int(n), (**C.CameraWidget)(unsafe.Pointer(&child)))
-		camera.getWidgetInfo(child, &output.Children[n])
+		baseWidget.children = append(baseWidget.children, camera.getWidgetInfo(child))
+	}
+
+	switch baseWidget.widgetType {
+	case WidgetText:
+		return cameraWidgetTextImpl{
+			cameraWidgetImpl: baseWidget,
+		}
+	case WidgetMenu, WidgetRadio:
+		return cameraWidgetMenuImpl{
+			cameraWidgetTextImpl: cameraWidgetTextImpl{
+				cameraWidgetImpl: baseWidget,
+			},
+		}
+	default:
+		return baseWidget
 	}
 }
 
 //PrintWidgetTree prints widget hierarchy to the output buffer
 func (camera *Camera) PrintWidgetTree(file io.Writer) {
+	camera.printWidgetTreeRecursive(file, camera.CameraSettings)
+}
 
-	widget := &camera.CameraSettings
-	fmt.Printf("Widget Info[%v], Label[%v] , Name[%v], type [%v]\n", widget.Info, widget.Label, widget.Name, widget.Type)
-	for _, child := range widget.Children {
-		fmt.Printf("    Widget Info[%v], Label[%v] , Name[%v], type [%v]\n", child.Info, child.Label, child.Name, child.Type)
+func (camera *Camera) printWidgetTreeRecursive(file io.Writer, widget CameraWidget) {
+	fmt.Printf("Widget Info[%v], Label[%v] , Name[%v], readonly [%t], type [%v]\n", widget.Info(), widget.Label(), widget.Name(), widget.ReadOnly(), widget.Type())
+	switch widgetAccessor := widget.(type) {
+	case CameraWidgetMenu:
+		if choices, err := widgetAccessor.GetChoices(); err != nil {
+			fmt.Println("     Could not read value of the widget")
+		} else {
+			fmt.Printf("      Choices : %+v", choices)
+		}
+		if value, err := widgetAccessor.Get(); err != nil {
+			fmt.Println("     Could not read value of the widget")
+		} else {
+			fmt.Printf("      Value :%s\n", *value)
+		}
+	case CameraWidgetRadio:
+		if choices, err := widgetAccessor.GetChoices(); err != nil {
+			fmt.Println("     Could not read value of the widget")
+		} else {
+			fmt.Printf("      Choices : %+v", choices)
+		}
+		if value, err := widgetAccessor.Get(); err != nil {
+			fmt.Println("     Could not read value of the widget")
+		} else {
+			fmt.Printf("      Value :%s\n", *value)
+		}
+	case CameraWidgetText:
+		if value, err := widgetAccessor.Get(); err != nil {
+			fmt.Println("     Could not read value of the widget")
+		} else {
+			fmt.Printf("      Value :%s\n", *value)
+		}
+
+	default:
+		fmt.Printf("     Cannot get value for the type %v\n", reflect.TypeOf(widgetAccessor))
+
+	}
+	for _, child := range widget.Children() {
+		camera.printWidgetTreeRecursive(file, child)
+	}
+}
+
+func (camera *Camera) getRootWidget() (*C.CameraWidget, error) {
+	var rootWidget *C.CameraWidget
+
+	if retval := C.gp_camera_get_config(camera.gpCamera, (**C.CameraWidget)(unsafe.Pointer(&rootWidget)), camera.gpContext); retval != gpOk {
+		return nil, fmt.Errorf("cannot initialize camera settings tree error code :%v", retval)
+	}
+	return rootWidget, nil
+}
+
+func (camera *Camera) getChildWidget(name *string) (*C.CameraWidget, error) {
+	var rootWidget, childWidget *C.CameraWidget
+	var err error
+	if rootWidget, err = camera.getRootWidget(); err != nil {
+		return nil, err
 	}
 
+	gpChildWidgetName := C.CString(*name)
+	defer C.free(unsafe.Pointer(gpChildWidgetName))
+
+	if retval := C.gp_widget_get_child_by_name(rootWidget, gpChildWidgetName, (**C.CameraWidget)(unsafe.Pointer(&childWidget))); retval != gpOk {
+		return nil, fmt.Errorf("Could not retrieve child widget with name %s, error code %d", *name, retval)
+	}
+	return childWidget, nil
+}
+
+func (camera *Camera) freeChildWidget(input *C.CameraWidget) {
+	var rootWidget *C.CameraWidget
+	C.gp_widget_get_root(input, (**C.CameraWidget)(unsafe.Pointer(&rootWidget)))
+	C.free(unsafe.Pointer(rootWidget))
 }
